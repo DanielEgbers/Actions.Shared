@@ -98,6 +98,9 @@ public static class Feed
                         }
 
                         synItem.Id = link;
+
+                        if (Uri.IsWellFormedUriString(link, UriKind.Absolute))
+                            synItem.AddLink(new SyndicationLink(new Uri(link)));
                     }
                     
                     if (item.Title != null)
