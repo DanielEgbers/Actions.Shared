@@ -66,7 +66,7 @@ public static class Feed
         }
     }
 
-    public static async Task<string> WriteAsync(FeedChannel channel, IEnumerable<FeedItem> items, string? itemLinkBaseUrl = null, string? itemImageBaseUrl = null)
+    public static async Task<string> WriteAsync(FeedChannel channel, IEnumerable<FeedItem> items)
     {
         using (var stringWriter = new StringWriterWithEncoding(Encoding.UTF8))
         {
@@ -91,12 +91,6 @@ public static class Feed
                     {
                         var link = item.Link;
 
-                        if (itemLinkBaseUrl != null && !link.ToLowerInvariant().StartsWith(itemLinkBaseUrl.ToLowerInvariant()))
-                        {
-                            if (!link.StartsWith("/")) link = "/" + link;
-                            link = itemLinkBaseUrl + link;
-                        }
-
                         synItem.Id = link;
 
                         if (Uri.IsWellFormedUriString(link, UriKind.Absolute))
@@ -110,17 +104,7 @@ public static class Feed
                         synItem.Published = item.Published.Value;
 
                     if (!string.IsNullOrWhiteSpace(item.Image))
-                    {                        
-                        var image = item.Image;
-
-                        if (itemImageBaseUrl != null && !image.ToLowerInvariant().StartsWith(itemImageBaseUrl.ToLowerInvariant()))
-                        {
-                            if (!image.StartsWith("/")) image = "/" + image;
-                            image = itemImageBaseUrl + image;
-                        }
-
-                        synItem.Description += $@"<img src=""{image}"">";
-                    }
+                        synItem.Description += $@"<img src=""{item.Image}"">";
 
                     if (!string.IsNullOrWhiteSpace(synItem.Description))
                         synItem.Description += "<br>";
