@@ -28,6 +28,20 @@ public class FeedItem
 
 public static class Feed
 {
+    public static IEnumerable<string> ReadItemLinks(string feedXml)
+    {
+        try
+        {
+            var document = new XmlDocument();
+            document.LoadXml(feedXml);
+            return document.SelectNodes(".//item/link").Cast<XmlNode>().Select(n => n.InnerText);
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
+    }
+
     public static async Task<IEnumerable<FeedItem>> ReadItemsAsync(string feedXml)
     {
         async Task<bool> ReadAsync(RssFeedReader reader)
