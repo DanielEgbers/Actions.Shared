@@ -20,8 +20,9 @@ public static class Git
 
     public static async Task<IEnumerable<GitChange>> GetChangesAsync(string? workingDirectory = null)
     {
-        var gitStatus = Regex.Replace(await Command.ReadAsync("git", $"status --short --untracked-files", workingDirectory: workingDirectory), @"\r\n?|\n", Environment.NewLine).Trim().Split(Environment.NewLine);
-        return gitStatus.Select(l => Regex.Match(l, "^([^ ]+)[ ]+(.*)$")).Select(m => new GitChange() { File = m.Groups[2].Value });
+        var gitStatus = await Command.ReadAsync("git", $"status --short --untracked-files", workingDirectory: workingDirectory);
+        var gitStatusLines = Regex.Replace(gitStatus, @"\r\n?|\n", Environment.NewLine).Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        return gitStatusLines.Select(l => Regex.Match(l, "^([^ ]+)[ ]+(.*)$")).Select(m => new GitChange() { File = m.Groups[2].Value });
     }
 
     public static async Task StageAllAsync(string? workingDirectory = null)
