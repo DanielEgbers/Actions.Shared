@@ -3,36 +3,52 @@
 #nullable enable
 
 using SimpleExec;
+using System.Text.RegularExpressions;
+
+public class GitChange
+{
+    public string File { get; set; } = string.Empty;
+}
 
 public static class Git
 {
-    public static async Task ConfigUserAsync(string? workingDirectory, string name, string email)
+    public static async Task ConfigUserAsync(string name, string email, string? workingDirectory = null)
     {
         await Command.RunAsync("git", $"config user.name \"{name}\"", workingDirectory: workingDirectory);
         await Command.RunAsync("git", $"config user.email \"{email}\"", workingDirectory: workingDirectory);
     }
 
-    public static async Task<bool> CommitAsync(string? workingDirectory, string message, params string[] files)
+    public static async Task<IEnumerable<GitChange>> GetChangesAsync(string? workingDirectory = null)
     {
-        var gitStatus = await Command.ReadAsync("git", $"status --short --untracked-files", workingDirectory: workingDirectory);
-
-        var changedFiles = files.Where(f => gitStatus.Contains(f)).ToArray();
-
-        if (changedFiles.Length <= 0)
-            return false;
-
-        var changedFilesJoin = $"\"{string.Join("\" \"", changedFiles)}\"";
-
-        await Command.RunAsync("git", $"add {changedFilesJoin}", workingDirectory: workingDirectory);
-
-        var gitCommitMessage = message.Replace($"{{{nameof(files)}}}", changedFilesJoin.Replace("\"", "'"));
-        await Command.RunAsync("git", $"commit -m \"{gitCommitMessage}\"", workingDirectory: workingDirectory);
-
-        return true;
+        var gitStatus = Regex.Replace(await Command.ReadAsync("git", $"status --short --untracked-files", workingDirectory: workingDirectory), @"\r\n?|\n", Environment.NewLine).Trim().Split(Environment.NewLine);
+        return gitStatus.Select(l => Regex.Match(l, "^([^ ]+)[ ]+(.*)$")).Select(m => new GitChange() { File = m.Groups[2].Value });
     }
 
-    public static async Task PushAsync(string? workingDirectory)
+    public static async Task StageAllAsync(string? workingDirectory = null)
     {
-        await Command.RunAsync("git", "push --quiet --progress", workingDirectory: workingDirectory);
+        await Command.RunAsync("git", $"add --all", workingDirectory: workingDirectory);
+    }
+
+    public static async Task<bool> TryStageAsync(string pathspec, string? workingDirectory = null)
+    {
+        try
+        {
+            await Command.RunAsync("git", $"add {pathspec}", workingDirectory: workingDirectory);
+            return true;
+        }
+        catch (NonZeroExitCodeException)
+        {
+            return false;
+        }
+    }
+
+    public static async Task CommitAsync(string message, string? workingDirectory = null, DateTimeOffset? date = null)
+    {
+        await Command.RunAsync("git", $"commit --message=\"{message}\" {(date != null ? $"--date={date.Value.ToUnixTimeSeconds()}" : string.Empty)}", workingDirectory: workingDirectory);
+    }
+
+    public static async Task PushAsync(string? workingDirectory = null)
+    {
+        await Command.RunAsync("git", $"push --quiet --progress", workingDirectory: workingDirectory);
     }
 }
