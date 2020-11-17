@@ -34,7 +34,8 @@ public static class Feed
         {
             var document = new XmlDocument();
             document.LoadXml(feedXml);
-            return document.SelectNodes(".//item/link").Cast<XmlNode>().Select(n => n.InnerText);
+            var nodes = document.SelectNodes(".//item/link")?.Cast<XmlNode>() ?? Array.Empty<XmlNode>();
+            return nodes.Select(n => n.InnerText);
         }
         catch
         {
