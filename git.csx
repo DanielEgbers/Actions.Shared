@@ -12,6 +12,12 @@ public class GitChange
 
 public static class Git
 {
+    public static bool IsRootDirectory(string? workingDirectory = null)
+    {
+        var path = Path.Combine(workingDirectory ?? Directory.GetCurrentDirectory(), ".git");
+        return Directory.Exists(path) || File.Exists(path);
+    }
+
     public static async Task ConfigUserAsync(string name, string email, string? workingDirectory = null)
     {
         await Command.RunAsync("git", $"config user.name \"{name}\"", workingDirectory: workingDirectory);
