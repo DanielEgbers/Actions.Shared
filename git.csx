@@ -18,6 +18,20 @@ public static class Git
         return Directory.Exists(path) || File.Exists(path);
     }
 
+    public static async Task<string?> GetRootDirectoryAsync(string? workingDirectory = null)
+    {
+        try
+        {
+            var gitToplevel = await Command.ReadAsync("git", $"rev-parse --show-toplevel", workingDirectory: workingDirectory);
+            var path = Path.GetFullPath(gitToplevel.Trim());
+            return path;
+        }
+        catch (NonZeroExitCodeException)
+        {
+            return null;
+        }
+    }
+
     public static async Task ConfigUserAsync(string name, string email, string? workingDirectory = null)
     {
         await Command.RunAsync("git", $"config user.name \"{name}\"", workingDirectory: workingDirectory);
